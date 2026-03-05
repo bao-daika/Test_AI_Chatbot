@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export default async function handler(req, res) {
 
   if (req.method !== "POST") {
-    return res.status(405).json({ reply: "Method Not Allowed" });
+    return res.status(405).json({ reply: "Method not allowed" });
   }
 
   try {
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest"
+      model: "gemini-1.5-flash-001"
     });
 
     const prompt = `
@@ -24,8 +24,8 @@ Street smart gym bro in Downtown Toronto.
 Territory:
 Bathurst
 College
-Bay Street
 Front St West
+Bay Street
 
 Style:
 Gym slang
@@ -34,12 +34,13 @@ Supportive but tough
 Rule:
 Never say you are an AI.
 
-User question:
+User says:
 ${message}
 `;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
+
     const text = response.text();
 
     return res.status(200).json({
@@ -51,7 +52,7 @@ ${message}
     console.error("Gemini error:", error);
 
     return res.status(500).json({
-      reply: "Boss bị lỗi rồi bro. Check API key hoặc Vercel logs."
+      reply: "Boss bị lỗi rồi bro. Check API key hoặc logs."
     });
 
   }
