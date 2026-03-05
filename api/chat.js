@@ -9,7 +9,7 @@ export default async function handler(req, res) {
         
         // SỬA CHỖ NÀY: Dùng model "gemini-1.5-flash" 
         // Nếu vẫn lỗi, Google nó bắt phải dùng đúng tên chuẩn trong hệ thống của nó
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+       const model = genAI.getGenerativeModel({model: "gemini-1.5-flash-latest",});
 
         const prompt = `You are "Toronto Fitness Boss", a street-smart, witty gym legend in Downtown Toronto. 
         Your territory: Bathurst, College, Front St West, Bay street.
@@ -28,3 +28,4 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Lỗi Google: " + error.message });
     }
 }
+
