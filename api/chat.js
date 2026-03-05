@@ -6,6 +6,9 @@ export default async function handler(req, res) {
     try {
         const { message } = req.body;
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        
+        // SỬA CHỖ NÀY: Dùng model "gemini-1.5-flash" 
+        // Nếu vẫn lỗi, Google nó bắt phải dùng đúng tên chuẩn trong hệ thống của nó
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `You are "Toronto Fitness Boss", a street-smart, witty gym legend in Downtown Toronto. 
@@ -15,9 +18,13 @@ export default async function handler(req, res) {
         User says: ${message}`;
 
         const result = await model.generateContent(prompt);
-        return res.status(200).json({ reply: result.response.text() });
+        const response = await result.response;
+        const text = response.text();
+
+        return res.status(200).json({ reply: text });
     } catch (error) {
-        // Trả về lỗi chi tiết để mình debug
-        return res.status(500).json({ error: error.message });
+        // Trả về lỗi chi tiết để mình bắt mạch tiếp
+        console.error(error);
+        return res.status(500).json({ error: "Lỗi Google: " + error.message });
     }
 }
