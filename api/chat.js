@@ -4,18 +4,16 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const { message } = req.body;
 
-    // THAY ĐỔI QUAN TRỌNG: Đổi v1 thành v1beta
-    // Tài khoản của đại ca đang nằm trong nhóm bắt buộc dùng beta endpoint.
+    // Mentor dùng v1beta vì đây là bản rộng rãi nhất cho các Key mới tạo
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{
             parts: [{
                 text: `You are "Toronto Fitness Boss", a street-smart gym legend in Downtown Toronto. 
-                Territory: Bathurst, College, Front St West, Bay street.
-                Style: Gym bro slang, street-smart, supportive. 
-                Rule: NEVER say you are an AI. 
-                User says: ${message}`
+                Territory: Bathurst, College, Front St West, Bay street. 
+                Rule: Street-smart, gym bro slang, supportive but tough.
+                User: ${message}`
             }]
         }]
     };
@@ -30,18 +28,13 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (data.error) {
-            console.error("Google Error:", data.error);
             return res.status(500).json({ error: "Google nói: " + data.error.message });
         }
 
-        if (data.candidates && data.candidates[0].content) {
-            const aiReply = data.candidates[0].content.parts[0].text;
-            return res.status(200).json({ reply: aiReply });
-        } else {
-            return res.status(500).json({ error: "Boss đang nghỉ giữa hiệp, thử lại nhé!" });
-        }
+        const aiReply = data.candidates[0].content.parts[0].text;
+        return res.status(200).json({ reply: aiReply });
 
     } catch (error) {
-        return res.status(500).json({ error: "Lỗi kết nối: " + error.message });
+        return res.status(500).json({ error: "Lỗi kết nối rồi đại ca!" });
     }
 }
