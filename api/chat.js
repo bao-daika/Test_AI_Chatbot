@@ -4,15 +4,16 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const { message } = req.body;
 
-    // Đổi sang gemini-pro để đảm bảo tương thích 100% với v1
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    // THAY ĐỔI QUAN TRỌNG: Đổi v1 thành v1beta
+    // Tài khoản của đại ca đang nằm trong nhóm bắt buộc dùng beta endpoint.
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{
             parts: [{
                 text: `You are "Toronto Fitness Boss", a street-smart gym legend in Downtown Toronto. 
-                Your territory: Bathurst, College, Front St West, Bay street.
-                Style: Gym bro slang, street-smart, supportive but tough. 
+                Territory: Bathurst, College, Front St West, Bay street.
+                Style: Gym bro slang, street-smart, supportive. 
                 Rule: NEVER say you are an AI. 
                 User says: ${message}`
             }]
@@ -28,18 +29,16 @@ export default async function handler(req, res) {
 
         const data = await response.json();
 
-        // Xử lý nếu Google trả lỗi
         if (data.error) {
             console.error("Google Error:", data.error);
             return res.status(500).json({ error: "Google nói: " + data.error.message });
         }
 
-        // Trích xuất câu trả lời
         if (data.candidates && data.candidates[0].content) {
             const aiReply = data.candidates[0].content.parts[0].text;
             return res.status(200).json({ reply: aiReply });
         } else {
-            return res.status(500).json({ error: "Boss đang bận đẩy tạ, thử lại sau nhé bro!" });
+            return res.status(500).json({ error: "Boss đang nghỉ giữa hiệp, thử lại nhé!" });
         }
 
     } catch (error) {
