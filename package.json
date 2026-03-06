@@ -1,6 +1,9 @@
 {
-  "name": "gemini-ai-only",
-  "version": "1.0.0",
+  "name": "petra-cast-ai",
+  "version": "1.1.0",
   "type": "module",
-  "dependencies": {}
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  },
+  "description": "AI Technical Consultant for Petra Design"
 }

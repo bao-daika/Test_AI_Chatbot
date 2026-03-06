@@ -3,50 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toronto Fitness Boss AI</title>
+    <title>Petra Design AI - Technical Consultant</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background: #0b0f1a; color: white; font-family: sans-serif; }
-        .glass { background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(59, 130, 246, 0.2); }
-        #chat-messages::-webkit-scrollbar { display: none; }
-        /* Hiệu ứng gõ chữ cho Boss */
+        body { background: #1a1a1a; color: #e5e5e5; font-family: 'Inter', sans-serif; }
+        .petra-glass { background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .typing::after { content: '...'; animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
     </style>
 </head>
 <body class="h-screen flex items-center justify-center p-4">
 
-    <div id="chatbot-panel" class="glass w-full max-w-md h-[600px] rounded-3xl overflow-hidden shadow-2xl flex flex-col">
-        <div class="bg-blue-600 p-5 flex items-center gap-4 shadow-lg">
-            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <i data-lucide="crown" class="text-white"></i>
+    <div class="petra-glass w-full max-w-2xl h-[700px] rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-[#c2a478] p-5 flex items-center justify-between shadow-lg">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-black/20 rounded flex items-center justify-center">
+                    <i data-lucide="component" class="text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold uppercase tracking-tight text-white">Petra Design AI</h1>
+                    <p class="text-[10px] text-white/80 uppercase tracking-widest font-semibold">Architectural Precast Specialist</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-sm font-black uppercase tracking-tighter">Toronto Fitness Boss</h1>
-                <p class="text-[10px] text-blue-200 uppercase font-bold tracking-widest">Downtown Core AI</p>
+            <div class="text-right hidden sm:block text-white/80 text-[10px]">
+                <p>Toronto, ON</p>
+                <p>petracast.ca</p>
             </div>
         </div>
 
-        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 text-sm">
-            <div class="bg-blue-500/20 border border-blue-500/30 rounded-2xl p-4 text-blue-100">
-                Yo! Toronto Fitness Boss đây. Tao nắm hết địa bàn Bathurst, College, Front St West. Muốn hỏi về Gym hay Gains thì nói lẹ đi bro!
+        <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-6 text-[15px] leading-relaxed">
+            <div class="bg-[#c2a478]/10 border border-[#c2a478]/20 rounded-xl p-4 text-[#c2a478]">
+                Welcome to PetraCast. I am your technical consultant for <strong>GFRC, UHPC, and Precast</strong> projects. How can I assist with your engineering or manufacturing inquiries today? I can speak all languages !
             </div>
         </div>
 
-        <div class="p-4 bg-black/30 border-t border-white/5 flex gap-2">
-            <input id="chat-input" type="text" placeholder="Hỏi Boss về địa bàn Downtown..." 
-                class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-all">
-            <button onclick="sendMessage()" class="bg-blue-600 p-3 rounded-xl text-white active:scale-90 hover:bg-blue-500 transition">
-                <i data-lucide="send" class="w-5 h-5"></i>
+        <div class="p-6 bg-black/20 border-t border-white/5 flex gap-3">
+            <input id="chat-input" type="text" placeholder="Ask about GFRC specs, CAD/CNC, or installation..." 
+                class="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-[#c2a478] transition-all">
+            <button onclick="sendMessage()" class="bg-[#c2a478] px-6 rounded-lg text-white font-bold hover:bg-[#b39366] active:scale-95 transition-all">
+                SEND
             </button>
         </div>
     </div>
 
     <script>
-        // Khởi tạo icons
         lucide.createIcons();
-
         const input = document.getElementById("chat-input");
         const chatBox = document.getElementById("chat-messages");
 
@@ -54,75 +56,35 @@
             const msg = input.value.trim();
             if (!msg) return;
 
-            // 1. Hiển thị tin nhắn của User
-            chatBox.innerHTML += `
-                <div class="flex justify-end animate-in slide-in-from-right-2 duration-300">
-                    <div class="bg-blue-600 p-3 rounded-2xl rounded-tr-none max-w-[85%] shadow-md">${msg}</div>
-                </div>
-            `;
-
+            // User Message
+            chatBox.innerHTML += `<div class="flex justify-end"><div class="bg-[#333] p-4 rounded-2xl rounded-tr-none max-w-[85%] border border-white/5 shadow-sm">${msg}</div></div>`;
             input.value = "";
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // 2. Hiển thị trạng thái Boss đang suy nghĩ
+            // Loading
             const loadingId = "loading-" + Date.now();
-            chatBox.innerHTML += `
-                <div id="${loadingId}" class="flex justify-start">
-                    <div class="bg-white/10 border border-white/10 p-3 rounded-2xl rounded-tl-none italic text-gray-400">
-                        Boss đang check Gains <span class="typing"></span>
-                    </div>
-                </div>
-            `;
+            chatBox.innerHTML += `<div id="${loadingId}" class="flex justify-start"><div class="bg-white/5 p-4 rounded-2xl rounded-tl-none italic text-gray-500">Consulting technical data<span class="typing"></span></div></div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                // 3. Gọi API (Kết nối trực tiếp tới /api/chat.js)
                 const res = await fetch("/api/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ message: msg })
                 });
-
                 const data = await res.json();
-                
-                // Xóa trạng thái loading
-                const loadingElem = document.getElementById(loadingId);
-                if (loadingElem) loadingElem.remove();
+                document.getElementById(loadingId).remove();
 
-                // 4. Kiểm tra dữ liệu và hiển thị phản hồi
-                // Đồng bộ với API: lấy data.reply hoặc data.error
-                const finalReply = data.reply || data.error || "Boss đang bận đẩy tạ, thử lại sau!";
-                const isError = data.error ? "text-red-400 border-red-500/30" : "text-white border-white/10";
-
-                chatBox.innerHTML += `
-                    <div class="flex justify-start animate-in slide-in-from-left-2 duration-300">
-                        <div class="bg-white/10 border ${isError} p-3 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm">
-                            ${finalReply}
-                        </div>
-                    </div>
-                `;
-
+                // AI Response
+                chatBox.innerHTML += `<div class="flex justify-start animate-in fade-in duration-500"><div class="bg-white/10 border border-white/10 p-4 rounded-2xl rounded-tl-none max-w-[85%] text-gray-200 shadow-md">${data.reply}</div></div>`;
             } catch (e) {
-                // Xử lý lỗi kết nối
-                const loadingElem = document.getElementById(loadingId);
-                if (loadingElem) loadingElem.remove();
-
-                chatBox.innerHTML += `
-                    <div class="flex justify-center px-4">
-                        <div class="bg-red-500/10 text-red-500 text-[10px] px-3 py-1 rounded-full border border-red-500/20 uppercase font-bold">
-                            Lỗi kết nối rồi bro! Check lại internet đi.
-                        </div>
-                    </div>
-                `;
+                document.getElementById(loadingId).remove();
+                chatBox.innerHTML += `<div class="text-red-500 text-center text-xs">Connection error. Please contact Petra office.</div>`;
             }
-
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Bắt sự kiện phím Enter
-        input.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") sendMessage();
-        });
+        input.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
     </script>
 </body>
 </html>
