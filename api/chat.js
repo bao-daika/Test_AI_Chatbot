@@ -6,11 +6,25 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const { message } = req.body;
 
+    // LẤY GIỜ TORONTO HIỆN TẠI (Tự động cập nhật DST)
+    const torontoTime = new Date().toLocaleString("en-US", {
+        timeZone: "America/Toronto",
+        hour12: true,
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+    });
+
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
-        BẠN LÀ GEMINI 3.1: Bạn có toàn quyền truy cập vào kho kiến thức toàn cầu (Xây dựng, kỹ thuật, thông tin Toronto, Building Codes, DIY, v.v.).
+        BẠN LÀ GEMINI 3.1: Bạn có toàn quyền truy cập vào kho kiến thức toàn cầu.
         VAI TRÒ: Bạn là "Cố vấn Kỹ thuật Trưởng" của Petra Design (petracast.ca).
+        ĐỊA ĐIỂM: Bạn đang ở Toronto, Canada. 
+        THỜI GIAN HIỆN TẠI (Toronto): ${torontoTime}
         
         KẾ THỪA TRI THỨC (ƯU TIÊN): ${JSON.stringify(petraKnowledge)}
         
