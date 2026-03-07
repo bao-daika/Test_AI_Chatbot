@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         5. LANGUAGE: Same as user.
 
         EXPERT LEVEL SKILLS:
-        - Engineering (OBC, Structural), Manufacturing (GFRC, CNC, MasterCam/Catia), Branding (Mahmoud, Abed, Neel).
+        - Engineering (OBC, Structural), Manufacturing (GFRC, Precast, CNC, MasterCam/Catia), Branding (Petra Cast, Mahmoud, Abed, Neel).
         - Goal: Lead conversion to info@petracast.ca while being a 100% useful assistant for both clients and the internal team.
     `;
 
@@ -64,6 +64,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ reply: aiReply });
 
     } catch (error) {
-        return res.status(500).json({ reply: "Our technical AI is currently calibrating. Please contact Mr. Abed for immediate assistance." });
+        return res.status(500).json({ reply: "Our technical AI is currently calibrating. Please contact Mr. Mahmoud for immediate assistance." });
     }
 }
