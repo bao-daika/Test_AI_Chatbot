@@ -6,12 +6,13 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const { message } = req.body;
 
-    // Đã cập nhật lên v3 và model Gemini 3.1 Pro mạnh nhất hiện tại (2026)
-    const url = `https://generativelanguage.googleapis.com/v3/models/gemini-3.1-pro:generateContent?key=${apiKey}`;
+    // SỬ DỤNG LẠI ENDPOINT v1beta (Giống con Fitness Boss chạy ok)
+    // Nhưng model được chỉ định là gemini-1.5-pro để có "não" mạnh nhất trong dải ổn định
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
         You are the "Chief Technical Consultant" at Petra Design (petracast.ca).
-        You are powered by Gemini 3.1 Pro (Latest 2026 update).
+        You are an expert in GFRC, UHPC, and architectural precast.
         
         KNOWLEDGE BASE: ${JSON.stringify(petraKnowledge)}
         
@@ -51,8 +52,10 @@ export default async function handler(req, res) {
             body: JSON.stringify(payload)
         });
 
-        // Xử lý Fallback nếu endpoint v3/3.1 Pro gặp vấn đề về vùng (Region)
-        if (!response.ok) {
+        const data = await response.json();
+
+        // Nếu bản Pro gặp lỗi Quota (Free tier), tự động fallback sang Flash cực nhanh
+        if (data.error) {
             const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             const fallbackRes = await fetch(fallbackUrl, {
                 method: 'POST',
@@ -63,10 +66,10 @@ export default async function handler(req, res) {
             return res.status(200).json({ reply: fallbackData.candidates[0].content.parts[0].text });
         }
 
-        const data = await response.json();
         const aiReply = data.candidates[0].content.parts[0].text;
         return res.status(200).json({ reply: aiReply });
     } catch (error) {
-        return res.status(500).json({ error: "System busy. Please try again." });
+        // Trả về lỗi chuyên nghiệp nếu mất kết nối hoàn toàn
+        return res.status(500).json({ reply: "Our technical AI is currently calibrating. Please contact Mr. Abed for immediate assistance." });
     }
 }
