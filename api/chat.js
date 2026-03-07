@@ -6,10 +6,12 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const { message } = req.body;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Đã cập nhật lên v3 và model Gemini 3.1 Pro mạnh nhất hiện tại (2026)
+    const url = `https://generativelanguage.googleapis.com/v3/models/gemini-3.1-pro:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
         You are the "Chief Technical Consultant" at Petra Design (petracast.ca).
+        You are powered by Gemini 3.1 Pro (Latest 2026 update).
         
         KNOWLEDGE BASE: ${JSON.stringify(petraKnowledge)}
         
@@ -48,6 +50,19 @@ export default async function handler(req, res) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+
+        // Xử lý Fallback nếu endpoint v3/3.1 Pro gặp vấn đề về vùng (Region)
+        if (!response.ok) {
+            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const fallbackRes = await fetch(fallbackUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const fallbackData = await fallbackRes.json();
+            return res.status(200).json({ reply: fallbackData.candidates[0].content.parts[0].text });
+        }
+
         const data = await response.json();
         const aiReply = data.candidates[0].content.parts[0].text;
         return res.status(200).json({ reply: aiReply });
