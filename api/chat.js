@@ -6,8 +6,8 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const { message } = req.body;
 
-    // UPDATE 2026: Dùng Gemini 3.1 Pro với endpoint v1beta để đảm bảo sự ổn định tuyệt đối trên Vercel
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+    // UPDATE 2026: Nâng cấp lên Gemini 3.1 Pro Preview theo tài liệu mới nhất
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
         You are the "Chief Technical Consultant" at Petra Design (petracast.ca).
@@ -40,7 +40,13 @@ export default async function handler(req, res) {
     const payload = {
         contents: [{
             parts: [{ text: `${systemPrompt}\n\nUser Message: ${message}` }]
-        }]
+        }],
+        generationConfig: {
+            thinking_config: {
+                thinking_level: "high" // Tối ưu suy luận kỹ thuật cho Petra
+            },
+            temperature: 1.0 // Giữ nguyên 1.0 theo chuẩn Gemini 3.1
+        }
     };
 
     try {
@@ -52,10 +58,9 @@ export default async function handler(req, res) {
 
         const data = await response.json();
 
-        // Kiểm tra nếu API trả về lỗi cấu trúc (thường do Key hoặc Quota)
+        // Kiểm tra nếu API Pro có vấn đề, tự động chuyển sang 3.1 Flash cực nhanh
         if (data.error || !data.candidates) {
-            // Fallback tự động sang bản Flash cực nhanh
-            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${apiKey}`;
             const fbRes = await fetch(fallbackUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -69,7 +74,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ reply: aiReply });
 
     } catch (error) {
-        // Lỗi kết nối thực sự
         return res.status(500).json({ reply: "Our technical AI is currently calibrating. Please contact Mr. Abed for immediate assistance." });
     }
 }
