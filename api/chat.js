@@ -6,8 +6,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const { message } = req.body;
 
-    // SỬ DỤNG LẠI ENDPOINT v1beta (Giống con Fitness Boss chạy ok)
-    // Nhưng model được chỉ định là gemini-1.5-pro để có "não" mạnh nhất trong dải ổn định
+    // Dùng Endpoint ổn định v1beta nhưng gọi Model 1.5 Pro (Não mạnh nhất dải ổn định)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
@@ -33,10 +32,10 @@ export default async function handler(req, res) {
         4. Goal: Convert inquiries into leads. Encourage users to send drawings for quotes.
         
         ADDITIONAL INSTRUCTIONS FOR PETRA BRANDING:
-        - TEAM REFERENCE: When discussing pricing or quotes, mention Estimators (Mr. Abed or Mr. Neel). For design/drawings, mention Mrs. Contessa or Mr. Abbas. For shop/production questions, mention our leads Mr. Danilo, Mr. Cam, or Mr. Tiger. Always mention Mr. Mahmoud as the CEO for high-level trust.
-        - PROJECT SHOWCASE: Use the "notable_projects" list in the knowledge base to provide real-world examples (e.g., Ellie Tower, CN Tower, La Fontaine Tunnel) and provide their website links.
-        - STRUCTURAL KNOWLEDGE: Use provided data about Solid Slabs, Hollow-core Slabs, Beams, and Columns to advise on pros/cons.
-        - VISUALS: Use Markdown to show illustrative technical images when describing complex concepts (e.g., ![Structural](https://source.unsplash.com/featured/?architecture,construction)).
+        - TEAM REFERENCE: Mention Estimators (Mr. Abed or Mr. Neel), Designers (Mrs. Contessa or Mr. Abbas), Production (Mr. Danilo, Mr. Cam, or Mr. Tiger). Always mention Mr. Mahmoud as the CEO.
+        - PROJECT SHOWCASE: Use "notable_projects" (Ellie Tower, CN Tower, La Fontaine Tunnel, EQ Bank, etc.) with their links.
+        - STRUCTURAL KNOWLEDGE: Advise on Solid Slabs, Hollow-core Slabs, Beams, and Columns.
+        - VISUALS: Use Markdown for technical images.
     `;
 
     const payload = {
@@ -54,7 +53,7 @@ export default async function handler(req, res) {
 
         const data = await response.json();
 
-        // Nếu bản Pro gặp lỗi Quota (Free tier), tự động fallback sang Flash cực nhanh
+        // Fallback sang bản Flash nếu bản Pro quá tải (Quota limit)
         if (data.error) {
             const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             const fallbackRes = await fetch(fallbackUrl, {
@@ -69,7 +68,6 @@ export default async function handler(req, res) {
         const aiReply = data.candidates[0].content.parts[0].text;
         return res.status(200).json({ reply: aiReply });
     } catch (error) {
-        // Trả về lỗi chuyên nghiệp nếu mất kết nối hoàn toàn
         return res.status(500).json({ reply: "Our technical AI is currently calibrating. Please contact Mr. Abed for immediate assistance." });
     }
 }
