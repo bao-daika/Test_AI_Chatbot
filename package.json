@@ -1,0 +1,7 @@
+{
+  "name": "petra-cast-ai",
+  "version": "1.1.0",
+  "type": "module",
+  "description": "AI Technical Consultant for Petra Design",
+  "dependencies": {}
+}
