@@ -42,6 +42,12 @@
         }
         #chat-input::-webkit-scrollbar { display: none; }
 
+        /* Giữ định dạng xuống dòng và bullet points của AI */
+        .bot-reply {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
         #image-preview-container {
             display: none;
             position: relative;
@@ -206,7 +212,7 @@
 
                 chatBox.innerHTML += `
                     <div class="flex justify-start animate-in fade-in duration-500">
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-2xl rounded-tl-none max-w-[85%] text-gray-200 shadow-md leading-relaxed">
+                        <div class="bot-reply bg-white/10 border border-white/10 p-4 rounded-2xl rounded-tl-none max-w-[85%] text-gray-200 shadow-md leading-relaxed">
                             ${data.reply}
                         </div>
                     </div>`;
