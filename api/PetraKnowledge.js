@@ -8,7 +8,7 @@ export const petraKnowledge = {
         address: "47 St. Regis Crescent, North York, ON M3J 1Y6, Canada" 
     },
 
-    // Đội ngũ nhân sự chuyên nghiệp - Sẵn sàng giới thiệu cho khách
+    // Đội ngũ nhân sự chuyên nghiệp
     team: {
         ceo: {
             name: "Mr. Mahmoud",
@@ -32,7 +32,7 @@ export const petraKnowledge = {
         }
     },
 
-    // Các dự án nổi bật (Notable Projects) - Đã cập nhật 10 dự án mới nhất
+    // Các dự án nổi bật
     notable_projects: [
         { name: "Ellie Tower Condominium", city: "Toronto", type: "Architectural Precast Facade", link: "https://petracast.com/projects/ellie-tower-condominium/" },
         { name: "CN Tower Overview", city: "Toronto", type: "Specialized Concrete Works", link: "https://petracast.com/projects/cn-tower-overview/" },
@@ -52,7 +52,8 @@ export const petraKnowledge = {
             name: "Glass Fiber Reinforced Concrete",
             description: "75% lighter than traditional concrete. High flexural strength.",
             composition: ["Cement", "Sand", "Water", "Glass Fibers", "Additives"],
-            benefits: ["Fire-resistant Class A", "Impact resistance", "Complex design flexibility"],
+            benefits: ["Fire-resistant Class A", "Non-combustible (UL/ULC compliant)", "Impact resistance"],
+            fire_rating: "Class A / Non-combustible. Zero smoke development and flame spread.",
             applications: ["Cornices", "Columns", "Facades", "Planters"]
         },
         uhpc: {
@@ -65,19 +66,31 @@ export const petraKnowledge = {
                 max_custom_thickness: "1 5/8\""
             }
         },
-        grg: { name: "Glass Fiber Reinforced Gypsum", usage: "Interior ceilings & ornate details" },
+        grg: { 
+            name: "Glass Fiber Reinforced Gypsum", 
+            usage: "Interior ceilings & ornate details",
+            fire_rating: "Class A Fire Rated (Non-combustible)"
+        },
         frp: { name: "Fiber Reinforced Polymer", usage: "Corrosion resistant architectural elements" }
     },
 
-    // Phân loại kết cấu xây dựng (Slabs, Beams, Columns)
+    // Phân loại kết cấu xây dựng
     structural_types: {
-        solid_slabs: { pros: "Strength, load bearing", cons: "Heavy weight" },
-        hollow_core_slabs: { pros: "Lightweight, long span", cons: "Lower acoustic insulation" },
+        solid_slabs: { 
+            pros: "Strength, load bearing", 
+            cons: "Heavy weight",
+            fire_rating: "Naturally high fire resistance (up to 4 hours depending on thickness)"
+        },
+        hollow_core_slabs: { 
+            pros: "Lightweight, long span", 
+            cons: "Lower acoustic insulation",
+            fire_rating: "Standard 1 to 2-hour rating (OBC Compliant)"
+        },
         beams: { shapes: ["T-beams", "L-beams", "I-beams"], usage: "Deck & Roof support" },
         columns: { shapes: ["Round", "Square", "Rectangular"], usage: "Parking & Commercial supports" }
     },
 
-    // Năng lực xưởng (Mould & Tech)
+    // Năng lực xưởng
     capabilities: {
         engineering: ["Load-bearing calcs", "Structural optimization", "Shop drawings"],
         mould_making: {

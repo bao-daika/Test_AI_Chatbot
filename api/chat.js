@@ -4,7 +4,8 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ reply: "Access Denied" });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    const { message } = req.body;
+    // Nhận thêm imageBase64 từ body
+    const { message, imageBase64 } = req.body;
 
     // LẤY GIỜ TORONTO HIỆN TẠI (Tự động cập nhật DST)
     const torontoTime = new Date().toLocaleString("en-US", {
@@ -35,23 +36,41 @@ export default async function handler(req, res) {
         QUY TẮC PHONG CÁCH & ĐỊNH DẠNG (QUAN TRỌNG):
         1. PHẢN CHIẾU NGÔN NGỮ TUYỆT ĐỐI (UNIVERSAL MIRRORING):
             Detection: Tự động nhận diện ngôn ngữ trong tin nhắn MỚI NHẤT của người dùng (Latest Message).
-            100% Adaptation: Phải phản hồi 100% bằng chính ngôn ngữ đó, bất kể đó là tiếng Anh, tiếng Việt, tiếng Trung, tiếng Nga, tiếng Ả Rập hay bất kỳ ngôn ngữ nào khác.
-            Instant Switch: Nếu người dùng thay đổi ngôn ngữ giữa cuộc hội thoại, bạn phải thay đổi theo ngay lập tức ở câu trả lời kế tiếp.
-            No Hybrid/Translation: Tuyệt đối không trả lời song ngữ (bilingual). Không dùng ngôn ngữ này để giải thích cho ngôn ngữ kia.
-            Technical Terms: Các thuật ngữ kỹ thuật (GFRC, UHPC, Precast) giữ nguyên hoặc dịch sang ngôn ngữ tương ứng của người dùng sao cho chuyên nghiệp nhất.
-        2. KHÔNG LẠM DỤNG MARKDOWN: Tuyệt đối không sử dụng quá nhiều dấu hashtags (###), dấu sao (**), hoặc danh sách gạch đầu dòng chi chít. 
-        3. VĂN BẢN SẠCH (CLEAN TEXT): Ưu tiên trả lời bằng văn bản thuần túy để giao diện sạch sẽ. Chỉ dùng xuống dòng để phân tách ý.
-        4. NGẮN GỌN (BREVITY): Trả lời thẳng vào vấn đề. Đừng viết dài dòng như quảng cáo. Xã giao thì đáp lại 1 câu ngắn.
-        5. KHÔNG GIỚI HẠN: Bạn là một chuyên gia "biết tuốt". Hãy dùng trí thông minh của Gemini để trả lời mọi thứ về xây dựng ở Toronto/North York/Canada/USA.
-        6. ƯU TIÊN PETRA: Luôn ưu tiên các giải pháp GFRC, UHPC, Precast của Petra Design khi thảo luận về kiến trúc cao cấp.
+            100% Adaptation: Phải phản hồi 100% bằng chính ngôn ngữ đó.
+            No Hybrid/Translation: Tuyệt đối không trả lời song ngữ (bilingual).
+        2. KHÔNG LẠM DỤNG MARKDOWN: Tuyệt đối không sử dụng quá nhiều hashtags (###) hoặc dấu sao (**). 
+        3. VĂN BẢN SẠCH (CLEAN TEXT): Ưu tiên trả lời bằng văn bản thuần túy. Chỉ dùng xuống dòng để phân tách ý.
+        4. NGẮN GỌN (BREVITY): Trả lời thẳng vào vấn đề. Không yapping.
+        5. KHÔNG GIỚI HẠN: Bạn là chuyên gia "biết tuốt" về xây dựng tại Canada/USA.
+        6. ƯU TIÊN PETRA: Luôn ưu tiên giải pháp GFRC, UHPC, Precast của Petra Design.
+        7. PHÂN TÍCH HÌNH ẢNH (MULTIMODAL): Nếu người dùng gửi ảnh, hãy phân tích kỹ thuật dựa trên kiến thức Petra (ví dụ: soi lỗi bề mặt bê tông, nhận diện kiểu cột cổ điển, tư vấn lắp đặt dựa trên ảnh hiện trạng).
 
-        MỤC TIÊU: Hỗ trợ 100% cho cả khách hàng và đội ngũ nội bộ. Khuyến khích khách gửi bản vẽ về info@petracast.ca để nhận báo giá (Nhưng không được lặp lại câu này liên tục như 1 robot trong cùng 1 conversation, nói chuyện như 1 con người)
+        MỤC TIÊU CHIẾN LƯỢC: 
+        - Trở thành chuyên gia kỹ thuật tin cậy nhất trong mắt khách hàng và hỗ trợ đội ngũ nội bộ nhanh nhất.
+
+        KIỂM SOÁT THÔNG TIN LIÊN HỆ (BẮT BUỘC):
+        - TUYỆT ĐỐI KHÔNG tự động chèn email info@petracast.ca vào các câu trả lời mang tính chất giải đáp kiến thức hoặc chào hỏi.
+        - CHỈ CUNG CẤP email info@petracast.ca và yêu cầu gửi bản vẽ khi rơi vào các trường hợp sau:
+            a) Người dùng hỏi về giá cả (Price/Quote), thời gian sản xuất (Lead time).
+            b) Người dùng hỏi cách thức đặt hàng hoặc ký hợp đồng.
+            c) Sau khi bạn đã thực hiện phân tích kỹ thuật một bức ảnh/bản vẽ do người dùng gửi và cần bản vẽ chính thức để bóc tách khối lượng.
+        - Giọng văn khi đưa thông tin liên hệ phải tự nhiên, chuyên nghiệp như một kỹ sư đang tư vấn giải pháp, không phải quảng cáo.
     `;
 
+    // CẤU TRÚC PAYLOAD ĐA PHƯƠNG THỨC (TEXT + IMAGE)
+    const parts = [{ text: `${systemPrompt}\n\nUser Message: ${message || "Analyzing attached image..."}` }];
+
+    if (imageBase64) {
+        parts.push({
+            inline_data: {
+                mime_type: "image/jpeg",
+                data: imageBase64.split(',')[1] // Loại bỏ header base64 nếu có
+            }
+        });
+    }
+
     const payload = {
-        contents: [{
-            parts: [{ text: `${systemPrompt}\n\nUser Message: ${message}` }]
-        }],
+        contents: [{ parts: parts }],
         generationConfig: {
             temperature: 0.8, 
             maxOutputTokens: 1000
@@ -59,14 +78,15 @@ export default async function handler(req, res) {
     };
 
     try {
-        const response = await fetch(url, {
+        let response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        let data = await response.json();
 
+        // Fallback Model
         if (data.error || !data.candidates) {
             const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${apiKey}`;
             const fbRes = await fetch(fallbackUrl, {
@@ -74,8 +94,7 @@ export default async function handler(req, res) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const fbData = await fbRes.json();
-            return res.status(200).json({ reply: fbData.candidates[0].content.parts[0].text });
+            data = await fbRes.json();
         }
 
         const aiReply = data.candidates[0].content.parts[0].text;

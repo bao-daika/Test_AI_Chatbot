@@ -30,19 +30,47 @@
         .typing::after { content: '...'; animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 
-        /* Custom scrollbar sang trọng */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #c2a478; border-radius: 10px; }
 
-        /* Gemini-style Textarea cho kỹ thuật viên */
         #chat-input {
             resize: none;
             min-height: 52px;
-            max-height: 180px;
+            max-height: 150px;
             scrollbar-width: none;
         }
         #chat-input::-webkit-scrollbar { display: none; }
+
+        #image-preview-container {
+            display: none;
+            position: relative;
+            margin-bottom: 8px;
+            width: fit-content;
+        }
+        #image-preview {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid #c2a478;
+        }
+        .remove-img {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
 
         @media (max-width: 640px) {
             .petra-glass { height: 100vh; border-radius: 0; }
@@ -70,14 +98,24 @@
 
         <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-6 text-[15px] leading-relaxed">
             <div class="bg-[#c2a478]/10 border border-[#c2a478]/20 rounded-xl p-4 text-[#c2a478] shadow-sm">
-                Welcome to Petra-Cast. I am your technical consultant for <strong>GFRC, UHPC, and Precast</strong> projects. How can I help you? I can speak all languages!
+                Welcome to Petra-Cast. I am your technical consultant for <strong>GFRC, UHPC, and Precast</strong> projects. You can upload site photos or drawings for analysis. How can I help you?
             </div>
         </div>
 
         <div class="p-4 bg-black/20 border-t border-white/5">
+            <div id="image-preview-container">
+                <img id="image-preview" src="" alt="Preview">
+                <div class="remove-img" onclick="removeImage()">×</div>
+            </div>
+
             <div class="relative flex items-end gap-2 bg-white/5 border border-white/10 rounded-2xl p-2 focus-within:border-[#c2a478] transition-all">
-                <textarea id="chat-input" rows="1" placeholder="Ask me anything ..." 
-                    class="flex-1 bg-transparent px-4 py-3 text-white placeholder-gray-500 focus:outline-none leading-relaxed"></textarea>
+                <button onclick="document.getElementById('file-input').click()" class="p-3 text-gray-400 hover:text-[#c2a478] transition-colors mb-1">
+                    <i data-lucide="image-plus" class="w-6 h-6"></i>
+                </button>
+                <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleImage(this)">
+
+                <textarea id="chat-input" rows="1" placeholder="Ask about GFRC, UHPC, Precast..." 
+                    class="flex-1 bg-transparent px-2 py-3 text-white placeholder-gray-500 focus:outline-none leading-relaxed"></textarea>
                 
                 <button onclick="sendMessage()" class="bg-[#c2a478] p-3 rounded-xl text-white hover:bg-[#b39366] active:scale-95 transition-all flex items-center justify-center mb-1 shadow-lg">
                     <i data-lucide="send-horizontal" class="w-5 h-5"></i>
@@ -91,35 +129,64 @@
         lucide.createIcons();
         const input = document.getElementById("chat-input");
         const chatBox = document.getElementById("chat-messages");
+        const fileInput = document.getElementById("file-input");
+        const previewContainer = document.getElementById("image-preview-container");
+        const previewImg = document.getElementById("image-preview");
+        
+        let selectedImageBase64 = null;
 
-        // Tự động giãn chiều cao khi gõ nội dung kỹ thuật dài
         input.addEventListener("input", function() {
             this.style.height = "auto";
             this.style.height = (this.scrollHeight) + "px";
         });
 
+        function handleImage(e) {
+            const file = e.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                selectedImageBase64 = event.target.result;
+                previewImg.src = selectedImageBase64;
+                previewContainer.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            selectedImageBase64 = null;
+            previewContainer.style.display = "none";
+            fileInput.value = "";
+        }
+
         async function sendMessage() {
             const msg = input.value.trim();
-            if (!msg) return;
+            if (!msg && !selectedImageBase64) return;
 
-            // User Message (Hỗ trợ xuống dòng)
+            let userContent = msg ? msg.replace(/\n/g, '<br>') : "";
+            if (selectedImageBase64) {
+                userContent += `<img src="${selectedImageBase64}" class="mt-2 rounded-lg max-w-[200px] border border-white/20 shadow-lg">`;
+            }
+
             chatBox.innerHTML += `
                 <div class="flex justify-end">
                     <div class="bg-[#333] p-4 rounded-2xl rounded-tr-none max-w-[85%] border border-white/5 shadow-sm">
-                        ${msg.replace(/\n/g, '<br>')}
+                        ${userContent}
                     </div>
                 </div>`;
             
+            const currentMsg = msg;
+            const currentImg = selectedImageBase64;
+
             input.value = "";
-            input.style.height = "52px"; // Reset chiều cao
+            input.style.height = "52px";
+            removeImage();
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // Loading
             const loadingId = "loading-" + Date.now();
             chatBox.innerHTML += `
                 <div id="${loadingId}" class="flex justify-start">
                     <div class="bg-white/5 p-4 rounded-2xl rounded-tl-none italic text-gray-500 text-sm">
-                        Consulting technical data<span class="typing"></span>
+                        Analyzing technical specifications<span class="typing"></span>
                     </div>
                 </div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -128,13 +195,15 @@
                 const res = await fetch("/api/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: msg })
+                    body: JSON.stringify({ 
+                        message: currentMsg,
+                        imageBase64: currentImg 
+                    })
                 });
                 const data = await res.json();
                 const loadingElement = document.getElementById(loadingId);
                 if (loadingElement) loadingElement.remove();
 
-                // AI Response
                 chatBox.innerHTML += `
                     <div class="flex justify-start animate-in fade-in duration-500">
                         <div class="bg-white/10 border border-white/10 p-4 rounded-2xl rounded-tl-none max-w-[85%] text-gray-200 shadow-md leading-relaxed">
@@ -149,7 +218,6 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Enter để gửi, Shift + Enter để xuống dòng
         input.addEventListener("keydown", (e) => { 
             if (e.key === "Enter" && !e.shiftKey) { 
                 e.preventDefault();
