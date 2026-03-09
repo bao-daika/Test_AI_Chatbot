@@ -42,10 +42,11 @@
         }
         #chat-input::-webkit-scrollbar { display: none; }
 
-        /* Đã sửa: Sử dụng pre-line để loại bỏ khoảng trắng thừa đầu dòng của AI */
+        /* Đã sửa: Ép sát lề trái hoàn toàn */
         .bot-reply {
             white-space: pre-line;
             word-break: break-word;
+            text-align: left;
         }
 
         #image-preview-container {
@@ -210,11 +211,13 @@
                 const loadingElement = document.getElementById(loadingId);
                 if (loadingElement) loadingElement.remove();
 
-                // Đã thêm class bot-reply và hàm .trim() để tối ưu hiển thị sát lề
+                // KHẮC PHỤC LỖI THỤT LỀ: Tách dòng và xóa khoảng trắng thừa ở đầu mỗi dòng
+                const finalReply = data.reply.split('\n').map(line => line.trimStart()).join('\n').trim();
+
                 chatBox.innerHTML += `
                     <div class="flex justify-start animate-in fade-in duration-500">
                         <div class="bot-reply bg-white/10 border border-white/10 p-4 rounded-2xl rounded-tl-none max-w-[85%] text-gray-200 shadow-md leading-relaxed">
-                            ${data.reply.trim()}
+                            ${finalReply}
                         </div>
                     </div>`;
             } catch (e) {
