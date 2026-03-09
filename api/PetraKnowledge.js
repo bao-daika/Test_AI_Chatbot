@@ -1,11 +1,34 @@
 export const petraKnowledge = {
     company: "Petra Design",
+    aka: ["Petra Cast", "Petra Design Toronto"],
     website: "petracast.ca",
     location: "Toronto/GTA, Ontario, Canada",
     contact: { 
         phone: "416-746-9668", 
         email: "info@petracast.ca",
         address: "47 St. Regis Crescent, North York, ON M3J 1Y6, Canada" 
+    },
+
+    // DANH MỤC SẢN PHẨM (PETRA DESIGN PRODUCTS)
+    products: {
+        exterior: {
+            materials: ["GFRC", "Fiberglass (FRP)", "Precast Concrete", "UHPC"],
+            items: [
+                "Facade Cladding", "Columns (Classic & Modern)", "Entrance Porch", 
+                "Window and Door Surrounds", "Sills", "Crown Moulding", 
+                "Cornices", "Parapet", "Arch", "Dome", "Minaret", 
+                "Fountain", "Bench", "Planters", "Balustrades"
+            ]
+        },
+        interior: {
+            materials: ["Plaster (GRG)", "Fiberglass (FRP)"],
+            items: [
+                "Fireplace Mantels", "Overmantel", "Kitchen Hoods", 
+                "Ceiling Tiles", "Domes", "Light Coves", 
+                "Custom Ornamentation", "Wall Panels"
+            ]
+        },
+        customization: "Unlimited colors and textures. All products can be custom-mixed in Petra’s in-house labs to match any architectural requirement."
     },
 
     // Đội ngũ nhân sự chuyên nghiệp
@@ -71,7 +94,7 @@ export const petraKnowledge = {
             usage: "Interior ceilings & ornate details",
             fire_rating: "Class A Fire Rated (Non-combustible)"
         },
-        frp: { name: "Fiber Reinforced Polymer", usage: "Corrosion resistant architectural elements" }
+        frp: { name: "Fiber Reinforced Polymer (Fiberglass)", usage: "Corrosion resistant architectural elements, exterior & interior" }
     },
 
     // Phân loại kết cấu xây dựng
