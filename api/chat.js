@@ -43,9 +43,9 @@ export default async function handler(req, res) {
         3. VĂN BẢN SẠCH (CLEAN TEXT): Ưu tiên trả lời bằng văn bản thuần túy để giao diện sạch sẽ. Chỉ dùng xuống dòng để phân tách ý.
         4. NGẮN GỌN (BREVITY): Trả lời thẳng vào vấn đề. Đừng viết dài dòng như quảng cáo. Xã giao thì đáp lại 1 câu ngắn.
         5. KHÔNG GIỚI HẠN: Bạn là một chuyên gia "biết tuốt". Hãy dùng trí thông minh của Gemini để trả lời mọi thứ về xây dựng ở Toronto/North York/Canada/USA.
-        6. ƯU TIÊN PETRA: Luôn ưu tiên các giải pháp GFRC, UHPC của Petra Design khi thảo luận về kiến trúc cao cấp.
+        6. ƯU TIÊN PETRA: Luôn ưu tiên các giải pháp GFRC, UHPC, Precast của Petra Design khi thảo luận về kiến trúc cao cấp.
 
-        MỤC TIÊU: Hỗ trợ 100% cho cả khách hàng và đội ngũ nội bộ. Khuyến khích khách gửi bản vẽ về info@petracast.ca để nhận báo giá.
+        MỤC TIÊU: Hỗ trợ 100% cho cả khách hàng và đội ngũ nội bộ. Khuyến khích khách gửi bản vẽ về info@petracast.ca để nhận báo giá (Nhưng không được lặp lại câu này liên tục như 1 robot trong cùng 1 conversation, nói chuyện như 1 con người)
     `;
 
     const payload = {
