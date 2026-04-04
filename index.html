@@ -16,14 +16,12 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            /* Cho phép chọn văn bản trên toàn trang nhưng giữ bảo vệ UI */
             -webkit-user-select: text;
             -moz-user-select: text;
             -ms-user-select: text;
             user-select: text;
         }
         
-        /* Đảm bảo các thành phần UI nút bấm không bị bôi đen nhầm */
         button, i, h1, p, label {
             -webkit-user-select: none;
             user-select: none;
@@ -59,12 +57,10 @@
             white-space: pre-line;
             word-break: break-word;
             text-align: left;
-            /* Đảm bảo câu trả lời của Bot luôn có thể copy */
             -webkit-user-select: text !important;
             user-select: text !important;
         }
         
-        /* Màu bôi đen cho hợp vibe Petra */
         ::selection {
             background: #c2a478;
             color: white;
@@ -189,7 +185,7 @@
 
         <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-6 text-[15px] leading-relaxed">
             <div class="bg-[#c2a478]/10 border border-[#c2a478]/20 rounded-xl p-4 text-[#c2a478] shadow-sm bot-reply">
-                Hello, I am <strong>Petra Design Assistant</strong>. I am fully multilingual and synced with the <strong>Petra Firebase Memory for Project's Status</strong>. How can I help you?
+                Hello, I am <strong>Petra Design Assistant</strong>. I am fully multilingual and synced with the <strong>Petra Firebase Memory</strong>. How can I help you?
             </div>
         </div>
 
@@ -241,6 +237,21 @@
         
         let selectedImageBase64 = null;
         let selectedImageMimeType = "image/jpeg";
+
+        // --- LOGIC TRÍ NHỚ NGẦM (INVISIBLE CONTEXT) ---
+        function saveToHiddenMemory(role, content) {
+            let history = JSON.parse(localStorage.getItem('petra_hidden_memory') || "[]");
+            history.push({ role, content });
+            if (history.length > 30) history.shift(); // Lưu tối đa 30 câu gần nhất
+            localStorage.setItem('petra_hidden_memory', JSON.stringify(history));
+        }
+
+        function getHiddenContext() {
+            let history = JSON.parse(localStorage.getItem('petra_hidden_memory') || "[]");
+            if (history.length === 0) return "";
+            return history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`).join("\n");
+        }
+        // ----------------------------------------------
 
         function updateTorontoClock() {
             const now = new Date();
@@ -305,7 +316,6 @@
             const btn = document.getElementById('btn-save');
 
             if(!name || !status) return alert("Please fill Project Name and Status!");
-
             btn.disabled = true;
             btn.innerHTML = "Syncing Petra Memory...";
 
@@ -324,7 +334,6 @@
                         }
                     })
                 });
-
                 const data = await res.json();
                 if (res.ok) {
                     alert("Success! " + data.reply);
@@ -363,11 +372,15 @@
             const currentMsg = msg;
             const currentImg = selectedImageBase64;
             const currentMime = selectedImageMimeType;
+            const hiddenContext = getHiddenContext(); // Lấy lịch sử ẩn
 
             input.value = "";
             input.style.height = "52px";
             removeImage();
             chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Lưu vào trí nhớ ngầm
+            saveToHiddenMemory('user', currentMsg || "[Image Sent]");
 
             const loadingId = "loading-" + Date.now();
             chatBox.innerHTML += `
@@ -383,7 +396,8 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
-                        message: currentMsg || "Please analyze the attached image based on Petra technical standards.",
+                        // Gửi kẹp Hidden Context để AI ghi nhớ
+                        message: hiddenContext ? `[Previous Context:\n${hiddenContext}]\n\nCurrent Question: ${currentMsg || "Analyze image"}` : (currentMsg || "Analyze image"),
                         imageBase64: currentImg,
                         mimeType: currentMime
                     })
@@ -398,9 +412,13 @@
                             ${data.reply}
                         </div>
                     </div>`;
+                
+                // Lưu phản hồi của bot vào trí nhớ ngầm
+                saveToHiddenMemory('bot', data.reply);
+
             } catch (e) {
                 document.getElementById(loadingId)?.remove();
-                chatBox.innerHTML += `<div class="text-red-500 text-center text-xs font-bold py-2 uppercase">Connection error. Please contact Petra office.</div>`;
+                chatBox.innerHTML += `<div class="text-red-500 text-center text-xs font-bold py-2 uppercase">Connection error.</div>`;
             }
             chatBox.scrollTop = chatBox.scrollHeight;
         }
@@ -411,6 +429,11 @@
                 sendMessage(); 
             } 
         });
+
+        window.onload = () => {
+            updateTorontoClock();
+            console.log("Petra Invisible Memory: Online.");
+        };
     </script>
 </body>
 </html>
