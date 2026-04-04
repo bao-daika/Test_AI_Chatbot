@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { petraKnowledge } from './PetraKnowledge.js';
 
-// --- CONFIGURATION: ĐIỀU CHỈNH SỐ LƯỢNG NHẬT KÝ TẠI ĐÂY ---
+// --- CONFIGURATION ---
 const LOG_LIMIT = 10; 
 
 if (!admin.apps.length) {
@@ -59,27 +59,28 @@ export default async function handler(req, res) {
         }
     }
 
-    // --- LOGIC TRUY XUẤT NHẬT KÝ MỚI: LẤY X BẢN GHI GẦN NHẤT ---
+    // --- LOGIC TRUY XUẤT NHẬT KÝ CHÍNH XÁC ---
     let recentProjectsContext = "";
     try {
-        // Loại bỏ filter ngày, chuyển sang dùng .limit() để hỗ trợ các dự án On-Hold
+        // Lấy 10 bản ghi gần nhất để làm ngữ cảnh
         const recentSnapshot = await db.collection('petra_memory')
             .orderBy('saved_at', 'desc')
             .limit(LOG_LIMIT)
             .get();
 
         if (!recentSnapshot.empty) {
-            recentProjectsContext = `\nLATEST ${LOG_LIMIT} PROJECT UPDATES (INCLUDING ON-HOLD):\n`;
+            recentProjectsContext = `\nINTERNAL DATABASE RECORDS (TOP ${LOG_LIMIT} RECENT):\n`;
             recentSnapshot.forEach(doc => {
                 const p = doc.data().project_info;
-                recentProjectsContext += `[ENTRY] Project: ${p.projectName} | Date: ${p.recordedAt} | Author: ${p.author} | Update: ${p.statusUpdate}\n`;
+                recentProjectsContext += `[FOUND_DATA] Project: ${p.projectName} | Date: ${p.recordedAt} | Author: ${p.author} | Update: ${p.statusUpdate}\n`;
             });
+        } else {
+            recentProjectsContext = "DATABASE_STATUS: EMPTY. No logs available.";
         }
     } catch (e) {
         console.error("Fetch recent logs error:", e);
     }
 
-    // --- LOGIC 2: CHAT VỚI AI (IDENTITY: PETRA DESIGN ASSISTANT) ---
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto",
         hour12: true,
@@ -92,30 +93,30 @@ export default async function handler(req, res) {
     const systemPrompt = `
         IDENTITY: YOU ARE PETRA DESIGN - ASSISTANT.
         ROLE: PRIVATE INTERNAL ASSISTANT for the Petra Design team.
-        STRICT RULE: Never mention Gemini, AI, or being a bot. You are the digital backbone of Petra operations.
         LOCATION: Toronto, Canada. CURRENT TIME: ${torontoTime}
         
         KNOWLEDGE INHERITANCE: ${JSON.stringify(petraKnowledge)}
         
-        INTERNAL DATA LOGS (LATEST ${LOG_LIMIT} RECORDS):
+        INTERNAL DATABASE LOGS:
         ${recentProjectsContext}
         
-        REPORTING RULE:
-        When asked about project status, history, or factory updates, you MUST list them using this EXACT format:
-        • Project: [Project Name]
-          Date: [Date from log]
-          [Author Name] wrote: [Status Update content]
+        STRICT PROJECT REPORTING RULES:
+        1. When asked about a project status: Check the INTERNAL DATABASE LOGS above.
+        2. If the Project Name matches ANY records: List all matching entries (up to 10) in this format:
+           • Project: [Project Name]
+             Date: [Date from log]
+             [Author Name] wrote: [Status Update content]
+        3. CRITICAL: If the project name is NOT in the logs, or the database is EMPTY, you MUST respond EXACTLY: "No Data has been saved for this project."
+        4. NEVER FABRICATE: Do not invent names, dates, or technical status if not present in the logs. 
+        5. DO NOT SUMMARIZE. PROVDE RAW DATA FROM LOGS ONLY.
 
-        STRICTLY PROVIDE RAW LOGS FROM THE INTERNAL DATA LOGS PROVIDED. DO NOT SUMMARIZE. NO SALES TALK.
-        
         STYLE & FORMATTING:
         1. UNIVERSAL MIRRORING: 100% match user language.
         2. NO MARKDOWN ABUSE. CLEAN TEXT.
-        3. BREVITY (INTERNAL EFFICIENCY): Max 100-160 words. Bullet points (•).
+        3. BREVITY: Max 160 words.
         4. NO LIMITS: Solve complex Math, Engineering, and Chemical calculations for GFRC/UHPC.
-        5. AUTOCAD SPECIALIST: Unlimited tokens for .LSP/.SCR code. Units: Millimeters (mm).
-        6. MULTIMODAL DIAGNOSIS: Analyze images for technical specs (GFRC, UHPC, FRP, Plaster, Metal).
-        7. NO CONTACT INFO: Do not provide email addresses or pricing instructions.
+         5. AUTOCAD SPECIALIST: Unlimited tokens for .LSP/.SCR code. Units: Millimeters (mm).
+        6. MULTIMODAL DIAGNOSIS: Analyze images for technical specs.
     `;
 
     const parts = [];
@@ -137,7 +138,6 @@ export default async function handler(req, res) {
 
         let data = await response.json();
         
-        // Fallback Model
         if (data.error || !data.candidates) {
             const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${apiKey}`;
             const fbRes = await fetch(fallbackUrl, {
