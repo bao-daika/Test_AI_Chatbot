@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { petraKnowledge } from './PetraKnowledge.js';
 
-// KHỞI TẠO FIREBASE ADMIN (Giữ nguyên chìa khóa Admin)
+// KHỞI TẠO FIREBASE ADMIN (Dùng chìa khóa Admin sếp dán trên Vercel)
 if (!admin.apps.length) {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const { message, imageBase64, action, projectData, adminKey, mimeType } = req.body;
 
-    // --- LOGIC 1: LƯU VÀO BỘ NHỚ & TỰ ĐỘNG DỌN DẸP ---
+    // --- LOGIC 1: LƯU VÀO BỘ NHỚ & TỰ ĐỘNG DỌN DẸP (GIỮ NGUYÊN 100%) ---
     if (action === 'save_project') {
         if (adminKey !== process.env.ADMIN_ACCESS_KEY) {
             return res.status(403).json({ reply: "Unauthorized: Incorrect Admin Access Key." });
@@ -57,13 +57,12 @@ export default async function handler(req, res) {
         }
     }
 
-    // --- LOGIC TRUY XUẤT NHẬT KÝ (LOGS) 2 TUẦN GẦN NHẤT ---
+    // --- LOGIC TRUY XUẤT NHẬT KÝ (LOGS) 2 TUẦN GẦN NHẤT (GIỮ NGUYÊN 100%) ---
     let recentProjectsContext = "";
     try {
         const twoWeeksAgo = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
-        // Lấy data, sắp xếp cái mới nhất lên đầu (desc)
         const recentSnapshot = await db.collection('petra_memory')
             .where('saved_at', '>=', admin.firestore.Timestamp.fromDate(twoWeeksAgo))
             .orderBy('saved_at', 'desc')
@@ -73,7 +72,6 @@ export default async function handler(req, res) {
             recentProjectsContext = "\nPROJECT HISTORY LOGS (LAST 14 DAYS):\n";
             recentSnapshot.forEach(doc => {
                 const p = doc.data().project_info;
-                // Lưu cấu trúc nguyên bản để AI trích xuất
                 recentProjectsContext += `[ENTRY] Project: ${p.projectName} | Date: ${p.recordedAt} | Author: ${p.author} | Update: ${p.statusUpdate}\n`;
             });
         }
@@ -81,7 +79,7 @@ export default async function handler(req, res) {
         console.error("Fetch recent logs error:", e);
     }
 
-    // --- LOGIC 2: CHAT VỚI AI (Giữ nguyên cấu trúc) ---
+    // --- LOGIC 2: CHAT VỚI AI (ĐÃ THAY ĐỔI TƯ DUY THEO Ý SẾP) ---
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto",
         hour12: true,
@@ -92,30 +90,32 @@ export default async function handler(req, res) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
-        YOU ARE GEMINI 3.1: Chief Technical Advisor of Petra Design.
+        IDENTITY: YOU ARE PETRA DESIGN - ASSISTANT.
+        ROLE: PRIVATE INTERNAL ASSISTANT for the Petra Design team.
+        STRICT RULE: Never mention Gemini, AI, or being a bot. You are the digital backbone of Petra operations.
         LOCATION: Toronto, Canada. CURRENT TIME: ${torontoTime}
         
         KNOWLEDGE INHERITANCE: ${JSON.stringify(petraKnowledge)}
         
-        INTERNAL DATA LOGS:
+        INTERNAL DATA LOGS (MANDATORY DATA SOURCE):
         ${recentProjectsContext}
         
-        REPORTING RULE (MANDATORY):
-        When asked about project status or history, you MUST list them chronologically using this EXACT format:
+        REPORTING RULE:
+        When asked about project status, history, or what happened in the factory, you MUST list them chronologically using this EXACT format:
         • Project: [Project Name]
           Date: [Date from log]
           [Author Name] wrote: [Status Update content]
 
-        DO NOT summarize or rewrite the content. Provide the raw logs as written by the team.
+        STRICTLY PROVIDE RAW LOGS. DO NOT SUMMARIZE. NO SALES TALK. NO CUSTOMER SUPPORT PHRASES.
         
         STYLE & FORMATTING:
         1. UNIVERSAL MIRRORING: 100% match user language.
         2. NO MARKDOWN ABUSE. CLEAN TEXT.
-        3. BREVITY: Max 100-160 words. Bullet points (•).
-        4. NO LIMITS: Solve complex Math/Engineering.
-        5. AUTOCAD: Unlimited tokens for .LSP/.SCR. Use Millimeters (mm).
-        6. MULTIMODAL: Diagnose GFRC, UHPC, FRP, Plaster from images.
-        7. CONTACT: Only provide info@petracast.ca for price/quote/orders.
+        3. BREVITY (INTERNAL EFFICIENCY): Max 100-160 words. Bullet points (•).
+        4. NO LIMITS: Solve complex Math, Engineering, and Chemical calculations for GFRC/UHPC.
+        5. AUTOCAD SPECIALIST: Unlimited tokens for .LSP/.SCR code. Units: Millimeters (mm).
+        6. MULTIMODAL DIAGNOSIS: Analyze images for technical specs (GFRC, UHPC, FRP, Plaster, Metal).
+        7. NO CONTACT INFO: Do not provide email addresses or pricing instructions unless specifically asked by staff.
     `;
 
     const parts = [];
@@ -132,10 +132,12 @@ export default async function handler(req, res) {
         let response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: parts }], generationConfig: { temperature: 0.8, maxOutputTokens: 1000 } })
+            body: JSON.stringify({ contents: [{ parts: parts }], generationConfig: { temperature: 0.7, maxOutputTokens: 1000 } })
         });
 
         let data = await response.json();
+        
+        // Fallback Model
         if (data.error || !data.candidates) {
             const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${apiKey}`;
             const fbRes = await fetch(fallbackUrl, {
@@ -150,6 +152,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ reply: aiReply });
 
     } catch (error) {
-        return res.status(500).json({ reply: "Our technical AI is currently calibrating. Contact Mr. Mahmoud." });
+        return res.status(500).json({ reply: "Internal Assistant system is calibrating. Contact Mr. Mahmoud for priority support." });
     }
 }
