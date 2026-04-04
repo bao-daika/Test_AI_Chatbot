@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { petraKnowledge } from './PetraKnowledge.js';
 
-// KHỞI TẠO FIREBASE ADMIN
+// KHỞI TẠO FIREBASE ADMIN (Giữ nguyên chìa khóa Admin)
 if (!admin.apps.length) {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -28,13 +28,11 @@ export default async function handler(req, res) {
         }
         
         try {
-            // Lưu dự án mới
             await db.collection('petra_memory').add({
                 project_info: projectData,
                 saved_at: admin.firestore.FieldValue.serverTimestamp()
             });
 
-            // Tự động dọn dẹp: Xóa nếu đã Complete hoặc > 6 tháng không update
             const sixMonthsAgo = new Date();
             sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -59,28 +57,31 @@ export default async function handler(req, res) {
         }
     }
 
-    // --- LOGIC TRUY XUẤT DATA 2 TUẦN GẦN NHẤT ĐỂ AI ĐỌC ---
+    // --- LOGIC TRUY XUẤT NHẬT KÝ (LOGS) 2 TUẦN GẦN NHẤT ---
     let recentProjectsContext = "";
     try {
         const twoWeeksAgo = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
+        // Lấy data, sắp xếp cái mới nhất lên đầu (desc)
         const recentSnapshot = await db.collection('petra_memory')
             .where('saved_at', '>=', admin.firestore.Timestamp.fromDate(twoWeeksAgo))
+            .orderBy('saved_at', 'desc')
             .get();
 
         if (!recentSnapshot.empty) {
-            recentProjectsContext = "\nRECENT PROJECTS STATUS (LAST 14 DAYS):\n";
+            recentProjectsContext = "\nPROJECT HISTORY LOGS (LAST 14 DAYS):\n";
             recentSnapshot.forEach(doc => {
                 const p = doc.data().project_info;
-                recentProjectsContext += `- Project: ${p.projectName} | Status: ${p.statusUpdate} | By: ${p.author}\n`;
+                // Lưu cấu trúc nguyên bản để AI trích xuất
+                recentProjectsContext += `[ENTRY] Project: ${p.projectName} | Date: ${p.recordedAt} | Author: ${p.author} | Update: ${p.statusUpdate}\n`;
             });
         }
     } catch (e) {
-        console.error("Fetch recent projects error:", e);
+        console.error("Fetch recent logs error:", e);
     }
 
-    // --- LOGIC 2: CHAT VỚI AI (Giữ nguyên cấu trúc của sếp) ---
+    // --- LOGIC 2: CHAT VỚI AI (Giữ nguyên cấu trúc) ---
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto",
         hour12: true,
@@ -91,22 +92,26 @@ export default async function handler(req, res) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
-        YOU ARE GEMINI 3.1: Chief Technical Advisor of Petra Design (petracast.ca).
-        LOCATION: Toronto, Canada. 
-        CURRENT TIME: ${torontoTime}
+        YOU ARE GEMINI 3.1: Chief Technical Advisor of Petra Design.
+        LOCATION: Toronto, Canada. CURRENT TIME: ${torontoTime}
         
         KNOWLEDGE INHERITANCE: ${JSON.stringify(petraKnowledge)}
         
+        INTERNAL DATA LOGS:
         ${recentProjectsContext}
         
-        INTERNAL ASSISTANT MODE:
-        - If users ask about project status, use the "RECENT PROJECTS STATUS" provided above to answer.
-        - If no info found, politely ask for project details.
+        REPORTING RULE (MANDATORY):
+        When asked about project status or history, you MUST list them chronologically using this EXACT format:
+        • Project: [Project Name]
+          Date: [Date from log]
+          [Author Name] wrote: [Status Update content]
+
+        DO NOT summarize or rewrite the content. Provide the raw logs as written by the team.
         
         STYLE & FORMATTING:
         1. UNIVERSAL MIRRORING: 100% match user language.
         2. NO MARKDOWN ABUSE. CLEAN TEXT.
-        3. BREVITY: Max 100-160 words. Use bullet points (•).
+        3. BREVITY: Max 100-160 words. Bullet points (•).
         4. NO LIMITS: Solve complex Math/Engineering.
         5. AUTOCAD: Unlimited tokens for .LSP/.SCR. Use Millimeters (mm).
         6. MULTIMODAL: Diagnose GFRC, UHPC, FRP, Plaster from images.
