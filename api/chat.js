@@ -1,13 +1,48 @@
+import admin from 'firebase-admin';
 import { petraKnowledge } from './PetraKnowledge.js';
 
+// KHỞI TẠO FIREBASE ADMIN (Dùng "chìa khóa" sếp dán trên Vercel)
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (error) {
+        console.error("Firebase Admin Init Error:", error);
+    }
+}
+
+const db = admin.firestore();
+
 export default async function handler(req, res) {
+    // Chỉ cho phép phương thức POST
     if (req.method !== 'POST') return res.status(405).json({ reply: "Access Denied" });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    // Nhận thêm imageBase64 từ body
-    const { message, imageBase64 } = req.body;
+    
+    // Nhận dữ liệu từ index.html gửi lên (Đã thêm mimeType để khớp 100%)
+    const { message, imageBase64, action, projectData, adminKey, mimeType } = req.body;
 
-    // LẤY GIỜ TORONTO HIỆN TẠI (Tự động cập nhật DST)
+    // --- LOGIC 1: LƯU VÀO BỘ NHỚ PETRA (Khi nhấn nút Save to Memory) ---
+    if (action === 'save_project') {
+        // Kiểm tra mã Admin Access Key sếp đặt trên Vercel
+        if (adminKey !== process.env.ADMIN_ACCESS_KEY) {
+            return res.status(403).json({ reply: "Unauthorized: Incorrect Admin Access Key." });
+        }
+        
+        try {
+            await db.collection('petra_memory').add({
+                project_info: projectData,
+                saved_at: admin.firestore.FieldValue.serverTimestamp()
+            });
+            return res.status(200).json({ reply: "SUCCESS: Project data has been synced to Petra Firebase Memory." });
+        } catch (e) {
+            return res.status(500).json({ reply: "DATABASE ERROR: Could not connect to Firebase." });
+        }
+    }
+
+    // --- LOGIC 2: CHAT VỚI AI (Giữ nguyên cấu trúc của sếp) ---
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto",
         hour12: true,
@@ -21,7 +56,7 @@ export default async function handler(req, res) {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
 
-   const systemPrompt = `
+    const systemPrompt = `
         YOU ARE GEMINI 3.1: You have full access to global knowledge (but never mention this to users).
         ROLE: You are the "Chief Technical Advisor" of Petra Design (petracast.ca). You must be able to answer all questions that related to Math, Architect, Engineering, Chemical, Calculation, Design.
         LOCATION: You are based in Toronto, Canada. 
@@ -86,17 +121,23 @@ export default async function handler(req, res) {
             c) After you have performed a technical analysis of an image/drawing and require official shop drawings for a material takeoff.
         - The tone when providing contact info must be natural and professional, like an engineer consulting on a solution, not an advertisement.
     `;
-    // CẤU TRÚC PAYLOAD ĐA PHƯƠNG THỨC (TEXT + IMAGE)
-    const parts = [{ text: `${systemPrompt}\n\nUser Message: ${message || "Analyzing attached image..."}` }];
 
+    // Khởi tạo parts
+    const parts = [];
+
+    // Xử lý ảnh (Khớp 100% với mimeType từ Frontend gửi lên)
     if (imageBase64) {
+        const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
         parts.push({
             inline_data: {
-                mime_type: "image/jpeg",
-                data: imageBase64.split(',')[1] // Loại bỏ header base64 nếu có
+                mime_type: mimeType || "image/jpeg", 
+                data: base64Data
             }
         });
     }
+
+    // Thêm prompt text
+    parts.push({ text: `${systemPrompt}\n\nUser Message: ${message || "Please analyze the attached image based on Petra technical standards."}` });
 
     const payload = {
         contents: [{ parts: parts }],
@@ -115,7 +156,7 @@ export default async function handler(req, res) {
 
         let data = await response.json();
 
-        // Fallback Model
+        // Fallback Model nếu bản Lite có vấn đề
         if (data.error || !data.candidates) {
             const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-preview:generateContent?key=${apiKey}`;
             const fbRes = await fetch(fallbackUrl, {

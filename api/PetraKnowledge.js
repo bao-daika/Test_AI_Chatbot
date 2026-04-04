@@ -44,7 +44,7 @@ export const petraKnowledge = {
             specialty: "Precise material takeoffs and project bidding. Contact them for competitive quotes."
         },
         designers: {
-            names: ["Mrs. Contessa", "Mr. Abbas"],
+            names: ["Ms. Contessa", "Mr. Arbaz"],
             role: "CAD Designers & Technical Leads",
             skills: ["AutoCAD", "3D Modeling", "SketchUp", "Complex Surface Design", "Catia"]
         },
