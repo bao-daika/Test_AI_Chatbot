@@ -1,7 +1,9 @@
 import admin from 'firebase-admin';
 import { petraKnowledge } from './PetraKnowledge.js';
 
-// KHỞI TẠO FIREBASE ADMIN (Dùng chìa khóa Admin sếp dán trên Vercel)
+// --- CONFIGURATION: ĐIỀU CHỈNH SỐ LƯỢNG NHẬT KÝ TẠI ĐÂY ---
+const LOG_LIMIT = 10; 
+
 if (!admin.apps.length) {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -57,19 +59,17 @@ export default async function handler(req, res) {
         }
     }
 
-    // --- LOGIC TRUY XUẤT NHẬT KÝ (LOGS) 2 TUẦN GẦN NHẤT (GIỮ NGUYÊN 100%) ---
+    // --- LOGIC TRUY XUẤT NHẬT KÝ MỚI: LẤY X BẢN GHI GẦN NHẤT ---
     let recentProjectsContext = "";
     try {
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
+        // Loại bỏ filter ngày, chuyển sang dùng .limit() để hỗ trợ các dự án On-Hold
         const recentSnapshot = await db.collection('petra_memory')
-            .where('saved_at', '>=', admin.firestore.Timestamp.fromDate(twoWeeksAgo))
             .orderBy('saved_at', 'desc')
+            .limit(LOG_LIMIT)
             .get();
 
         if (!recentSnapshot.empty) {
-            recentProjectsContext = "\nPROJECT HISTORY LOGS (LAST 14 DAYS):\n";
+            recentProjectsContext = `\nLATEST ${LOG_LIMIT} PROJECT UPDATES (INCLUDING ON-HOLD):\n`;
             recentSnapshot.forEach(doc => {
                 const p = doc.data().project_info;
                 recentProjectsContext += `[ENTRY] Project: ${p.projectName} | Date: ${p.recordedAt} | Author: ${p.author} | Update: ${p.statusUpdate}\n`;
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
         console.error("Fetch recent logs error:", e);
     }
 
-    // --- LOGIC 2: CHAT VỚI AI (ĐÃ THAY ĐỔI TƯ DUY THEO Ý SẾP) ---
+    // --- LOGIC 2: CHAT VỚI AI (IDENTITY: PETRA DESIGN ASSISTANT) ---
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto",
         hour12: true,
@@ -97,16 +97,16 @@ export default async function handler(req, res) {
         
         KNOWLEDGE INHERITANCE: ${JSON.stringify(petraKnowledge)}
         
-        INTERNAL DATA LOGS (MANDATORY DATA SOURCE):
+        INTERNAL DATA LOGS (LATEST ${LOG_LIMIT} RECORDS):
         ${recentProjectsContext}
         
         REPORTING RULE:
-        When asked about project status, history, or what happened in the factory, you MUST list them chronologically using this EXACT format:
+        When asked about project status, history, or factory updates, you MUST list them using this EXACT format:
         • Project: [Project Name]
           Date: [Date from log]
           [Author Name] wrote: [Status Update content]
 
-        STRICTLY PROVIDE RAW LOGS. DO NOT SUMMARIZE. NO SALES TALK. NO CUSTOMER SUPPORT PHRASES.
+        STRICTLY PROVIDE RAW LOGS FROM THE INTERNAL DATA LOGS PROVIDED. DO NOT SUMMARIZE. NO SALES TALK.
         
         STYLE & FORMATTING:
         1. UNIVERSAL MIRRORING: 100% match user language.
@@ -115,7 +115,7 @@ export default async function handler(req, res) {
         4. NO LIMITS: Solve complex Math, Engineering, and Chemical calculations for GFRC/UHPC.
         5. AUTOCAD SPECIALIST: Unlimited tokens for .LSP/.SCR code. Units: Millimeters (mm).
         6. MULTIMODAL DIAGNOSIS: Analyze images for technical specs (GFRC, UHPC, FRP, Plaster, Metal).
-        7. NO CONTACT INFO: Do not provide email addresses or pricing instructions unless specifically asked by staff.
+        7. NO CONTACT INFO: Do not provide email addresses or pricing instructions.
     `;
 
     const parts = [];
